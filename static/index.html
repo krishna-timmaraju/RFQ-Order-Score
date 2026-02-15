@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RFQ Lead Scores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #2a2a31;
+      --surface: #2a2a2f;
+      --border: #2a2a30;
+      --text: #ebebee;
+      --muted: #e2e2e6;
+      --high: #22c55e;
+      --medium: #eab308;
+      --low: #6b7280;
+      --accent: #6366f1;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .filters label { color: var(--muted); font-size: 0.875rem; }
+    .filters select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .filters button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .filters button:hover { opacity: 0.9; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .stat-card .value { font-size: 1.25rem; font-weight: 700; }
+    .stat-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .loading, .error {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+    .error { color: #ef4444; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: rgba(99, 102, 241, 0.1);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .score {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .priority {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .priority.high { background: rgba(34, 197, 94, 0.2); color: var(--high); }
+    .priority.medium { background: rgba(234, 179, 8, 0.2); color: var(--medium); }
+    .priority.low { background: rgba(107, 114, 128, 0.2); color: var(--low); }
+    .rfq-title { font-weight: 500; max-width: 280px; }
+    .muted { color: var(--muted); font-size: 0.875rem; }
+    .count-bar { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>RFQ Conversion Scores</h1>
+      <div class="filters">
+        <label for="limit">Limit</label>
+        <select id="limit">
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <button type="button" id="refresh">Refresh</button>
+      </div>
+    </header>
+
+    <div id="stats" class="stats" style="display: none;"></div>
+
+    <div id="content">
+      <div id="loading" class="loading">Loading RFQs…</div>
+      <div id="error" class="error" style="display: none;"></div>
+      <div id="tableWrap" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>RFQ ID</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Buyer</th>
+              <th>RFQ Score</th>
+              <th>Priority</th>
+              <th>Predicted Conversion</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="count-bar" id="countBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = ''; // same origin
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('tableWrap').style.display = 'none';
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('tableWrap').style.display = 'none';
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function showTable(rfqs, count) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('tableWrap').style.display = 'block';
+      document.getElementById('countBar').textContent = `Showing ${count} RFQ${count !== 1 ? 's' : ''}`;
+
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+
+      if (!rfqs || rfqs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="muted">No scored RFQs match the filters.</td></tr>';
+        return;
+      }
+
+      rfqs.forEach(r => {
+        const tr = document.createElement('tr');
+        const priority = (r.priority || '').toLowerCase();
+        const scoreColor = r.score_color || (priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low');
+        const convPct = r.conversion_probability != null
+          ? (r.conversion_probability * 100).toFixed(1) + '%'
+          : '—';
+        tr.innerHTML = `
+          <td><code>${escapeHtml(r.rfq_id || '—')}</code></td>
+          <td class="rfq-title">${escapeHtml(r.title || '—')}</td>
+          <td class="muted">${escapeHtml(r.category || '—')}</td>
+          <td class="muted">${escapeHtml(r.buyer_name || '—')}</td>
+          <td class="score">${r.lead_score != null ? r.lead_score : '—'}</td>
+          <td><span class="priority ${scoreColor}">${escapeHtml(r.priority || '—')}</span></td>
+          <td class="muted">${convPct}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '—';
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function renderStats(stats) {
+      if (!stats) return;
+      const el = document.getElementById('stats');
+      el.style.display = 'grid';
+      el.innerHTML = `
+        <div class="stat-card"><div class="value">${stats.total_scored ?? '—'}</div><div class="label">Total scored</div></div>
+        <div class="stat-card"><div class="value">${stats.high_priority ?? '—'}</div><div class="label">High priority</div></div>
+        <div class="stat-card"><div class="value">${stats.medium_priority ?? '—'}</div><div class="label">Medium</div></div>
+        <div class="stat-card"><div class="value">${stats.low_priority ?? '—'}</div><div class="label">Low priority</div></div>
+      `;
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(API_BASE + '/api/rfqs/stats');
+        const data = await res.json();
+        if (data.success && data.stats) renderStats(data.stats);
+      } catch (_) { /* optional */ }
+    }
+
+    async function loadRFQs() {
+      showLoading();
+      const limit = document.getElementById('limit').value;
+      const params = new URLSearchParams({ limit, min_score: 0 });
+      try {
+        const res = await fetch(API_BASE + '/api/rfqs/scored?' + params);
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Failed to load RFQs');
+          return;
+        }
+        if (!data.success) {
+          showError(data.error || 'Request failed');
+          return;
+        }
+        const rfqs = data.rfqs || [];
+        showTable(rfqs, data.count ?? rfqs.length);
+      } catch (e) {
+        showError('Network error: ' + e.message);
+      }
+    }
+
+    document.getElementById('refresh').addEventListener('click', () => {
+      loadRFQs();
+    });
+    document.getElementById('limit').addEventListener('change', loadRFQs);
+
+    (async () => {
+      await loadStats();
+      await loadRFQs();
+    })();
+  </script>
+</body>
+</html>
