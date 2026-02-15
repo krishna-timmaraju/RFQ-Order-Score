@@ -128,12 +128,132 @@
     .rfq-title { font-weight: 500; max-width: 280px; }
     .muted { color: var(--muted); font-size: 0.875rem; }
     .count-bar { margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); }
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-tab {
+      background: none;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .nav-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .nav-tab:hover { color: var(--text); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.875rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(67, 122, 215, 0.1);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .btn {
+      padding: 0.5rem 1.5rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #f0f0f0; }
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      max-width: 600px;
+    }
+    .form-success {
+      padding: 1rem;
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--high);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .form-error {
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>RFQ Conversion Scores</h1>
+      <h1>RFQ Score Dashboard</h1>
       <div class="filters">
         <label for="limit">Limit</label>
         <select id="limit">
@@ -146,27 +266,91 @@
       </div>
     </header>
 
-    <div id="stats" class="stats" style="display: none;"></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="view-rfqs">View RFQs</button>
+      <button class="nav-tab" data-tab="create-rfq">Create RFQ</button>
+    </div>
 
-    <div id="content">
-      <div id="loading" class="loading">Loading RFQs…</div>
-      <div id="error" class="error" style="display: none;"></div>
-      <div id="tableWrap" style="display: none;">
-        <table>
-          <thead>
-            <tr>
-              <th>RFQ ID</th>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Buyer</th>
-              <th>RFQ Score</th>
-              <th>Priority</th>
-              <th>Predicted Conversion</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <div class="count-bar" id="countBar"></div>
+    <!-- View RFQs Tab -->
+    <div id="view-rfqs" class="tab-content active">
+      <div id="stats" class="stats" style="display: none;"></div>
+
+      <div id="content">
+        <div id="loading" class="loading">Loading RFQs…</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="tableWrap" style="display: none;">
+          <table>
+            <thead>
+              <tr>
+                <th>RFQ ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Buyer</th>
+                <th>RFQ Score</th>
+                <th>Priority</th>
+                <th>Predicted Conversion</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div class="count-bar" id="countBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create RFQ Tab -->
+    <div id="create-rfq" class="tab-content">
+      <div class="form-card">
+        <h2 style="margin-top: 0;">Create New RFQ</h2>
+        <div id="form-success" class="form-success"></div>
+        <div id="form-error" class="form-error"></div>
+        <form id="create-rfq-form">
+          <div class="form-group">
+            <label for="rfq-title">Title *</label>
+            <input type="text" id="rfq-title" name="title" required placeholder="e.g., Office Supplies Procurement" />
+          </div>
+
+          <div class="form-group">
+            <label for="rfq-description">Description *</label>
+            <textarea id="rfq-description" name="description" required placeholder="Describe the RFQ requirements..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="rfq-category">Category *</label>
+            <input type="text" id="rfq-category" name="category" required placeholder="e.g., Supplies, Services, Equipment" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rfq-budget-min">Minimum Budget (INR) *</label>
+              <input type="number" id="rfq-budget-min" name="budget_min" required min="0" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label for="rfq-budget-max">Maximum Budget (INR) *</label>
+              <input type="number" id="rfq-budget-max" name="budget_max" required min="0" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="rfq-buyer-id">Buyer Business ID *</label>
+            <input type="number" id="rfq-buyer-id" name="buyer_business_id" required min="1" placeholder="e.g., 123" />
+          </div>
+
+          <div class="form-group">
+            <label for="rfq-status">Status *</label>
+            <select id="rfq-status" name="status" required>
+              <option value="">Select a status</option>
+              <option value="published" selected>Published</option>
+              <option value="draft">Draft</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submit-btn">Create RFQ</button>
+            <button type="reset" class="btn btn-secondary">Clear</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -174,6 +358,22 @@
   <script>
     const API_BASE = ''; // same origin
 
+    // ===== Tab Navigation =====
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const tabName = e.target.dataset.tab;
+        
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        e.target.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+      });
+    });
+
+    // ===== View RFQs Tab Functions =====
     function showLoading() {
       document.getElementById('loading').style.display = 'block';
       document.getElementById('error').style.display = 'none';
@@ -276,6 +476,118 @@
     });
     document.getElementById('limit').addEventListener('change', loadRFQs);
 
+    // ===== Create RFQ Form Functions =====
+    function showFormSuccess(message) {
+      const el = document.getElementById('form-success');
+      el.textContent = message;
+      el.style.display = 'block';
+      document.getElementById('form-error').style.display = 'none';
+    }
+
+    function showFormError(message) {
+      const el = document.getElementById('form-error');
+      el.textContent = message;
+      el.style.display = 'block';
+      document.getElementById('form-success').style.display = 'none';
+    }
+
+    function hideFormMessages() {
+      document.getElementById('form-success').style.display = 'none';
+      document.getElementById('form-error').style.display = 'none';
+    }
+
+    document.getElementById('create-rfq-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideFormMessages();
+
+      const form = e.target;
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      // Collect form data
+      const formData = new FormData(form);
+      const data = {
+        title: formData.get('title')?.trim(),
+        description: formData.get('description')?.trim(),
+        category: formData.get('category')?.trim(),
+        budget_min: parseInt(formData.get('budget_min'), 10),
+        budget_max: parseInt(formData.get('budget_max'), 10),
+        buyer_business_id: parseInt(formData.get('buyer_business_id'), 10),
+        status: formData.get('status')
+      };
+
+      // Basic validation
+      if (!data.title || !data.description || !data.category || !data.buyer_business_id || !data.status) {
+        showFormError('Please fill in all required fields.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+        return;
+      }
+
+      if (isNaN(data.budget_min) || isNaN(data.budget_max)) {
+        showFormError('Budget values must be valid numbers.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+        return;
+      }
+
+      if (data.budget_min < 0 || data.budget_max < 0) {
+        showFormError('Budget values must be greater than or equal to 0.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+        return;
+      }
+
+      if (data.budget_min > data.budget_max) {
+        showFormError('Minimum budget cannot be greater than maximum budget.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + '/api/rfqs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          showFormError(result.error || 'Failed to create RFQ.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create RFQ';
+          return;
+        }
+
+        if (!result.success) {
+          showFormError(result.error || 'Request failed.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create RFQ';
+          return;
+        }
+
+        // Success
+        showFormSuccess(`✓ RFQ created successfully! RFQ ID: ${result.rfq_id}`);
+        form.reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+
+        // Reload stats and RFQs
+        await loadStats();
+        await loadRFQs();
+      } catch (e) {
+        showFormError('Network error: ' + e.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create RFQ';
+      }
+    });
+
+    // ===== Initialize =====
     (async () => {
       await loadStats();
       await loadRFQs();
