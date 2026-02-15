@@ -6,6 +6,16 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import Error
 from config import Config
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 rfqs_bp = Blueprint('rfqs', __name__)
 
@@ -420,6 +430,107 @@ def get_score_distribution():
             'error': f'Database error: {str(e)}'
         }), 500
     except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+
+@rfqs_bp.route('/rfqs', methods=['POST'])
+def create_rfq():
+    """
+    Create a new RFQ in the database
+    
+    POST /api/rfqs
+    
+    Request body:
+    {
+        "title": "RFQ Title",
+        "description": "RFQ Description",
+        "category": "Category",
+        "budget_min": 1000,
+        "budget_max": 5000,
+        "buyer_business_id": 123,
+        "status": "published"
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "message": "RFQ created successfully",
+        "rfq_id": "rfq_123"
+    }
+    """
+    
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body must be valid JSON'
+            }), 400
+        
+        # Validate required fields are not null
+        required_fields = ['title', 'description', 'category', 'budget_min', 'budget_max', 'buyer_business_id', 'status']
+        missing_fields = [field for field in required_fields if field not in data or data[field] is None]
+        
+        if missing_fields:
+            return jsonify({
+                'success': False,
+                'error': f'Missing or null required fields: {missing_fields}'
+            }), 400
+        
+        # Extract data
+        title = data['title']
+        description = data['description']
+        category = data['category']
+        budget_min = data['budget_min']
+        budget_max = data['budget_max']
+        buyer_business_id = data['buyer_business_id']
+        status = data['status']
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
+        
+        cursor = conn.cursor()
+        
+        # Insert new RFQ
+        insert_query = """
+            INSERT INTO rfqs (title, description, category, budget_min, budget_max, buyer_business_id, status, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+            RETURNING rfq_id
+        """
+        
+        cursor.execute(insert_query, (title, description, category, budget_min, budget_max, buyer_business_id, status))
+        rfq_id = cursor.fetchone()[0]
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        # Log success message
+        logger.info(f"New RFQ created successfully - RFQ ID: {rfq_id}, Title: {title}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'RFQ created successfully',
+            'rfq_id': rfq_id
+        }), 201
+        
+    except Error as e:
+        logger.error(f"Database error while creating RFQ: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Database error: {str(e)}'
+        }), 500
+    except Exception as e:
+        logger.error(f"Server error while creating RFQ: {str(e)}")
         return jsonify({
             'success': False,
             'error': f'Server error: {str(e)}'
