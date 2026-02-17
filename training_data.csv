@@ -1,4 +1,4 @@
-id,rfq_id,buyer_surescore,category_match,budget_specified,converted,created_at
+id,rfq_id,buyer_brank,category_match,budget_specified,converted,created_at
 201,RFQ001,1,1,t,t,26:57.4
 202,RFQ002,1,0.6,t,t,26:57.4
 203,RFQ003,1,0.6,t,t,26:57.4
