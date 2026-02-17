@@ -39,7 +39,7 @@ print(df.describe())
 # ============================================
 # 2. PREPARE FEATURES
 # ============================================
-X = df[['buyer_surescore', 'category_match', 'budget_specified']]
+X = df[['buyer_brank', 'category_match', 'budget_specified']]
 y = df['converted']
 
 # Convert boolean to int:
@@ -96,7 +96,7 @@ else:
 print("\n" + "="*50)
 print("FEATURE IMPORTANCE")
 print("="*50)
-feature_names = ['buyer_surescore', 'category_match', 'budget_specified']
+feature_names = ['buyer_brank', 'category_match', 'budget_specified']
 for name, importance in zip(feature_names, model.feature_importances_):
     print(f"{name:20s}: {importance:.3f}")
 
@@ -142,7 +142,3 @@ with open('lead_scoring_model.pkl', 'wb') as f:
     pickle.dump(model_package, f)
 
 print("\n✓ Model saved as 'lead_scoring_model.pkl'")
-print("\nNext steps:")
-print("1. Review metrics above")
-print("2. If Test AUC > 0.70, proceed to deployment")
-print("3. Run: python score_new_rfqs.py")

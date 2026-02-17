@@ -78,13 +78,19 @@ def get_scored_rfqs():
     """
     
     # Get query parameters
-    limit = request.args.get('limit', default=50, type=int)
+    limit_param = request.args.get('limit', default=None, type=str)
     min_score = request.args.get('min_score', default=0, type=int)
     rfqscore_filter = request.args.get('rfqscore', default=None, type=int)
     status_filter = request.args.get('status', default='published', type=str)
-    
-    # Validate and cap limit
-    limit = min(limit, 100)
+
+    # Determine limit value
+    if limit_param is None or limit_param == 'all':
+        limit = None
+    else:
+        try:
+            limit = min(int(limit_param), 100)
+        except Exception:
+            limit = 50
     
     try:
         conn = get_db_connection()
@@ -151,9 +157,10 @@ def get_scored_rfqs():
         # Sort and limit
         query += """
             ORDER BY s.lead_score DESC, r.created_at DESC
-            LIMIT %s
         """
-        params.append(limit)
+        if limit is not None:
+            query += " LIMIT %s"
+            params.append(limit)
         
         cursor.execute(query, params)
         rows = cursor.fetchall()
@@ -500,27 +507,29 @@ def create_rfq():
         
         cursor = conn.cursor()
         
-        # Insert new RFQ
+        # Generate custom rfq_id in format RFQ001, RFQ002, ...
+        cursor.execute("SELECT rfq_id FROM rfqs ORDER BY created_at DESC LIMIT 1")
+        last_rfq = cursor.fetchone()
+        if last_rfq and last_rfq[0] and last_rfq[0].startswith('RFQ'):
+            last_num = int(last_rfq[0][3:])
+            new_num = last_num + 1
+        else:
+            new_num = 1
+        new_rfq_id = f"RFQ{new_num:03d}"
+
         insert_query = """
-            INSERT INTO rfqs (title, description, category, budget_min, budget_max, buyer_business_id, status, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
-            RETURNING rfq_id
+            INSERT INTO rfqs (rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
         """
-        
-        cursor.execute(insert_query, (title, description, category, budget_min, budget_max, buyer_business_id, status))
-        rfq_id = cursor.fetchone()[0]
+        cursor.execute(insert_query, (new_rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status))
         conn.commit()
-        
         cursor.close()
         conn.close()
-        
-        # Log success message
-        logger.info(f"New RFQ created successfully - RFQ ID: {rfq_id}, Title: {title}")
-        
+        logger.info(f"New RFQ created successfully - RFQ ID: {new_rfq_id}, Title: {title}")
         return jsonify({
             'success': True,
             'message': 'RFQ created successfully',
-            'rfq_id': rfq_id
+            'rfq_id': new_rfq_id
         }), 201
         
     except Error as e:

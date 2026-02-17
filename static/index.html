@@ -261,6 +261,7 @@
           <option value="20">20</option>
           <option value="50">50</option>
           <option value="100">100</option>
+          <option value="all">All</option>
         </select>
         <button type="button" id="refresh">Refresh</button>
       </div>
@@ -333,7 +334,7 @@
 
           <div class="form-group">
             <label for="rfq-buyer-id">Buyer Business ID *</label>
-            <input type="number" id="rfq-buyer-id" name="buyer_business_id" required min="1" placeholder="e.g., 123" />
+            <input type="text" id="rfq-buyer-id" name="buyer_business_id" required pattern="[A-Za-z0-9]+" placeholder="e.g., BIZ001" />
           </div>
 
           <div class="form-group">
@@ -451,8 +452,13 @@
 
     async function loadRFQs() {
       showLoading();
-      const limit = document.getElementById('limit').value;
-      const params = new URLSearchParams({ limit, min_score: 0 });
+      let limit = document.getElementById('limit').value;
+      let params;
+      if (limit === 'all') {
+        params = new URLSearchParams({ min_score: 0 });
+      } else {
+        params = new URLSearchParams({ limit, min_score: 0 });
+      }
       try {
         const res = await fetch(API_BASE + '/api/rfqs/scored?' + params);
         const data = await res.json();
@@ -513,7 +519,7 @@
         category: formData.get('category')?.trim(),
         budget_min: parseInt(formData.get('budget_min'), 10),
         budget_max: parseInt(formData.get('budget_max'), 10),
-        buyer_business_id: parseInt(formData.get('buyer_business_id'), 10),
+        buyer_business_id: formData.get('buyer_business_id')?.trim(),
         status: formData.get('status')
       };
 

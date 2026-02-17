@@ -32,7 +32,7 @@ cursor = conn.cursor()
 query = """
     SELECT 
         r.rfq_id,
-        b.surescore AS buyer_surescore,
+        b.brank AS buyer_brank,
         CASE 
             WHEN r.category = b.primary_category THEN 1.0
             WHEN r.category LIKE CONCAT('%', SUBSTRING(b.primary_category, 1, 5), '%') THEN 0.6
@@ -100,7 +100,7 @@ print(f"✓ Saved {len(df)} predictions")
 # 7. SHOW SAMPLE PREDICTIONS
 # ============================================
 print("\nSample predictions:")
-print(df[['rfq_id', 'buyer_surescore', 'category_match', 'lead_score']].head(10))
+print(df[['rfq_id', 'buyer_brank', 'category_match', 'lead_score']].head(10))
 
 cursor.close()
 conn.close()
