@@ -73,7 +73,7 @@ def get_scored_rfqs():
     """
     # Get query parameters
     limit_param = request.args.get('limit', default=None, type=str)
-    min_score = request.args.get('min_score', default=0, type=int)
+    min_score = request.args.get('min_score', default=None, type=int)
     rfqscore_filter = request.args.get('rfqscore', default=None, type=int)
     status_filter = request.args.get('status', default='published', type=str)
 
@@ -131,13 +131,11 @@ def get_scored_rfqs():
                 END AS score_color
                 
             FROM rfqs r
-            JOIN businesses b ON r.buyer_business_id = b.business_id
+            LEFT JOIN businesses b ON r.buyer_business_id = b.business_id
             JOIN rfq_lead_scores s ON r.rfq_id = s.rfq_id
-            
             WHERE r.status = %s
-              AND s.lead_score >= %s
         """
-        params = [status_filter, min_score]
+        params = [status_filter]
         # Add rfqscore filter if provided
         if rfqscore_filter:
             query += " AND b.brank = %s"
@@ -395,10 +393,17 @@ def get_rfq_stats():
         
         cursor.execute(query)
         row = cursor.fetchone()
+
+        # Get total RFQs
+        cursor.execute("SELECT COUNT(*) AS total_rfqs FROM rfqs")
+        total_rfqs_row = cursor.fetchone()
+
+        stats = dict(row) if row else {}
+        stats['total_rfqs'] = total_rfqs_row['total_rfqs'] if total_rfqs_row else 0
+
         cursor.close()
         conn.close()
 
-        stats = dict(row) if row else None
         return jsonify({
             'success': True,
             'stats': stats

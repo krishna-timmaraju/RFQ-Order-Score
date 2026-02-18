@@ -11,9 +11,9 @@ from sklearn.metrics import roc_auc_score, classification_report
 # 1. LOAD DATA
 # ============================================
 
-# DATA_FILE = Path('training_data.csv')
+DATA_FILE = Path('training_data.csv')
 
-DATA_FILE = Path('training_data_pipeline_test.csv')
+# DATA_FILE = Path('training_data_pipeline_test.csv')
 if not DATA_FILE.exists():
     print("Error: training_data.csv not found.")
     print(f"Please add '{DATA_FILE.resolve()}' and run again.")
