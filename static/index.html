@@ -29,6 +29,35 @@
       min-height: 100vh;
       line-height: 1.5;
     }
+    /* Modal styles for RFQ details */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.25);
+      align-items: center; justify-content: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #fff;
+      border-radius: var(--radius);
+      max-width: 500px;
+      width: 100%;
+      padding: 2rem 1.5rem 1.5rem 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
     .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
     header {
       display: flex;
@@ -100,6 +129,10 @@
       padding: 0.75rem 1rem;
       text-align: left;
       border-bottom: 1px solid var(--border);
+    }
+    .highlight-predicted {
+      background: #e3f0fb;
+      font-weight: 600;
     }
     th {
       background: #f0f0f0;
@@ -287,9 +320,8 @@
                 <th>Title</th>
                 <th>Category</th>
                 <th>Buyer</th>
-                <th>RFQ Score</th>
-                <th>Priority</th>
-                <th>Predicted Conversion</th>
+                <th>Business ID</th>
+                <th class="highlight-predicted">Predicted Conversion</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -411,13 +443,12 @@
           ? (r.conversion_probability * 100).toFixed(1) + '%'
           : '—';
         tr.innerHTML = `
-          <td><code>${escapeHtml(r.rfq_id || '—')}</code></td>
+          <td><a href="#rfq/${encodeURIComponent(r.rfq_id)}" class="rfq-link">${escapeHtml(r.rfq_id || '—')}</a></td>
           <td class="rfq-title">${escapeHtml(r.title || '—')}</td>
           <td class="muted">${escapeHtml(r.category || '—')}</td>
           <td class="muted">${escapeHtml(r.buyer_name || '—')}</td>
-          <td class="score">${r.lead_score != null ? r.lead_score : '—'}</td>
-          <td><span class="priority ${scoreColor}">${escapeHtml(r.priority || '—')}</span></td>
-          <td class="muted">${convPct}</td>
+          <td class="muted">${escapeHtml(r.buyer_id || '—')}</td>
+          <td class="highlight-predicted">${convPct}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -600,4 +631,86 @@
     })();
   </script>
 </body>
+  <!-- RFQ Details Modal -->
+  <div id="rfq-modal" class="modal" tabindex="-1">
+    <div class="modal-content" id="rfq-modal-content">
+      <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+      <div id="rfq-details-body"></div>
+    </div>
+  </div>
+  <script>
+    // ===== RFQ Details Modal Logic =====
+    function showRFQDetails(rfqId) {
+      const modal = document.getElementById('rfq-modal');
+      const body = document.getElementById('rfq-details-body');
+      body.innerHTML = '<div style="text-align:center;padding:2rem;">Loading…</div>';
+      modal.classList.add('active');
+      // Fetch details
+      fetch(API_BASE + '/api/rfqs/' + encodeURIComponent(rfqId))
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success || !data.rfq) {
+            body.innerHTML = '<div style="color:#ef4444;">Failed to load RFQ details.</div>';
+            return;
+          }
+          const rfq = data.rfq;
+          body.innerHTML = `
+            <h2 style="margin-top:0;">RFQ Details</h2>
+            <div style="margin-bottom:1rem;"><b>RFQ ID:</b> ${escapeHtml(rfq.rfq_id)}</div>
+            <div><b>Title:</b> ${escapeHtml(rfq.title)}</div>
+            <div><b>Description:</b> ${escapeHtml(rfq.description)}</div>
+            <div><b>Category:</b> ${escapeHtml(rfq.category)}</div>
+            <div><b>Buyer Name:</b> ${escapeHtml(rfq.buyer_name)}</div>
+            <div><b>Business ID:</b> ${escapeHtml(rfq.buyer_id)}</div>
+            <div><b>Budget Min:</b> ${escapeHtml(rfq.budget_min)}</div>
+            <div><b>Budget Max:</b> ${escapeHtml(rfq.budget_max)}</div>
+            <div><b>Status:</b> ${escapeHtml(rfq.status)}</div>
+            <div><b>Created At:</b> ${escapeHtml(rfq.created_at)}</div>
+          `;
+        })
+        .catch(() => {
+          body.innerHTML = '<div style="color:#ef4444;">Failed to load RFQ details.</div>';
+        });
+      // Focus for accessibility
+      setTimeout(() => document.getElementById('modal-close-btn').focus(), 100);
+    }
+
+    function closeRFQModal() {
+      document.getElementById('rfq-modal').classList.remove('active');
+      // Remove hash if present
+      if (location.hash.startsWith('#rfq/')) {
+        history.back();
+      }
+    }
+
+    document.getElementById('modal-close-btn').addEventListener('click', closeRFQModal);
+    document.getElementById('rfq-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('rfq-modal')) closeRFQModal();
+    });
+
+    // Listen for RFQ link clicks
+    document.addEventListener('click', function(e) {
+      if (e.target.classList && e.target.classList.contains('rfq-link')) {
+        e.preventDefault();
+        const rfqId = decodeURIComponent(e.target.getAttribute('href').split('/').pop());
+        location.hash = '#rfq/' + encodeURIComponent(rfqId);
+      }
+    });
+
+    // Hash change for navigation
+    window.addEventListener('hashchange', function() {
+      if (location.hash.startsWith('#rfq/')) {
+        const rfqId = decodeURIComponent(location.hash.split('/').pop());
+        showRFQDetails(rfqId);
+      } else {
+        closeRFQModal();
+      }
+    });
+
+    // Open modal if hash present on load
+    if (location.hash.startsWith('#rfq/')) {
+      const rfqId = decodeURIComponent(location.hash.split('/').pop());
+      showRFQDetails(rfqId);
+    }
+  </script>
 </html>

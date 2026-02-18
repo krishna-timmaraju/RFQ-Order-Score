@@ -85,24 +85,14 @@ def internal_error(error):
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Starting TrustMarket Lead Scoring API")
-    print("=" * 60)
-    print(f"Host: {Config.API_HOST}")
-    print(f"Port: {Config.API_PORT}")
     print(f"\n  → Open the UI in your browser: http://localhost:{Config.API_PORT}/ui")
     print("=" * 60)
     print(f"Debug: {Config.DEBUG}")
     print(f"Database: {Config.DB_NAME}@{Config.DB_HOST}")
     print("=" * 60)
-    print("\nAvailable Endpoints:")
-    print("  GET  /ui                    → Web UI (RFQ scores)")
-    print("  GET  /api/health")
-    print("  GET  /api/rfqs/scored")
-    print("  GET  /api/rfqs/<rfq_id>/score")
-    print("  GET  /api/rfqs/stats")
-    print("  GET  /api/rfqs/score-distribution")
-    print("=" * 60)
     
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.endpoint}: {rule}")
     app.run(
         host=Config.API_HOST,
         port=Config.API_PORT,

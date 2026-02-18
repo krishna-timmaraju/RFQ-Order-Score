@@ -11,11 +11,6 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 rfqs_bp = Blueprint('rfqs', __name__)
 
@@ -76,7 +71,6 @@ def get_scored_rfqs():
         "rfqs": [...]
     }
     """
-    
     # Get query parameters
     limit_param = request.args.get('limit', default=None, type=str)
     min_score = request.args.get('min_score', default=0, type=int)
@@ -91,7 +85,6 @@ def get_scored_rfqs():
             limit = min(int(limit_param), 100)
         except Exception:
             limit = 50
-    
     try:
         conn = get_db_connection()
         if not conn:
@@ -99,9 +92,7 @@ def get_scored_rfqs():
                 'success': False,
                 'error': 'Database connection failed'
             }), 500
-        
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        
         # Build dynamic query
         query = """
             SELECT 
@@ -146,14 +137,11 @@ def get_scored_rfqs():
             WHERE r.status = %s
               AND s.lead_score >= %s
         """
-        
         params = [status_filter, min_score]
-        
         # Add rfqscore filter if provided
         if rfqscore_filter:
             query += " AND b.brank = %s"
             params.append(rfqscore_filter)
-        
         # Sort and limit
         query += """
             ORDER BY s.lead_score DESC, r.created_at DESC
@@ -161,15 +149,12 @@ def get_scored_rfqs():
         if limit is not None:
             query += " LIMIT %s"
             params.append(limit)
-        
         cursor.execute(query, params)
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
-
         # Convert DictRow to dict so JSON has proper keys (UI expects e.g. r.rfq_id, r.lead_score)
         rfqs = [dict(r) for r in rows]
-
         return jsonify({
             'success': True,
             'count': len(rfqs),
@@ -181,12 +166,67 @@ def get_scored_rfqs():
             },
             'rfqs': rfqs
         }), 200
-        
     except Error as e:
         return jsonify({
             'success': False,
             'error': f'Database error: {str(e)}'
         }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+
+@rfqs_bp.route('/rfqs/<rfq_id>', methods=['GET'])
+def get_rfq_details(rfq_id):
+    """
+    Get details for a specific RFQ (for modal view)
+    GET /api/rfqs/<rfq_id>
+    Returns:
+    {
+        "success": true,
+        "rfq": {...}
+    }
+    """
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection failed'
+            }), 500
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        query = """
+            SELECT 
+                r.rfq_id,
+                r.title,
+                r.description,
+                r.category,
+                r.budget_min,
+                r.budget_max,
+                r.created_at,
+                r.status,
+                b.business_name AS buyer_name,
+                b.business_id AS buyer_id
+            FROM rfqs r
+            JOIN businesses b ON r.buyer_business_id = b.business_id
+            WHERE r.rfq_id = %s
+        """
+        cursor.execute(query, (rfq_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        rfq = dict(row) if row else None
+        if not rfq:
+            return jsonify({
+                'success': False,
+                'error': 'RFQ not found'
+            }), 404
+        return jsonify({
+            'success': True,
+            'rfq': rfq
+        }), 200
     except Exception as e:
         return jsonify({
             'success': False,
