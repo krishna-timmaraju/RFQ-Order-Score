@@ -10,7 +10,10 @@ from sklearn.metrics import roc_auc_score, classification_report
 # ============================================
 # 1. LOAD DATA
 # ============================================
-DATA_FILE = Path('training_data.csv')
+
+# DATA_FILE = Path('training_data.csv')
+
+DATA_FILE = Path('training_data_pipeline_test.csv')
 if not DATA_FILE.exists():
     print("Error: training_data.csv not found.")
     print(f"Please add '{DATA_FILE.resolve()}' and run again.")
@@ -33,8 +36,6 @@ for col in ('budget_specified', 'converted'):
 
 print(f"Total samples: {len(df)}")
 print(f"Conversion rate: {df['converted'].mean():.1%}")
-print(f"\nFeature distributions:")
-print(df.describe())
 
 # ============================================
 # 2. PREPARE FEATURES
@@ -85,13 +86,6 @@ print(f"Train AUC: {train_auc:.3f}")
 print(f"Test AUC: {test_auc:.3f}")
 print(f"Gap: {train_auc - test_auc:.3f}")
 
-if test_auc < 0.70:
-    print("\n⚠️  WARNING: Test AUC < 0.70. Model may not be ready for production.")
-elif test_auc < 0.80:
-    print("\n✓ Test AUC is fair. Consider shipping as PoC with monitoring.")
-else:
-    print("\n✓ Test AUC is good. Ready for production!")
-
 # Feature importance:
 print("\n" + "="*50)
 print("FEATURE IMPORTANCE")
@@ -102,11 +96,6 @@ for name, importance in zip(feature_names, model.feature_importances_):
 
 # Classification report:
 y_test_pred = (y_test_pred_proba > 0.5).astype(int)
-print("\n" + "="*50)
-print("CLASSIFICATION REPORT (Threshold = 0.5)")
-print("="*50)
-print(classification_report(y_test, y_test_pred, 
-                          target_names=['Not Converted', 'Converted']))
 
 # Top-K analysis:
 print("\n" + "="*50)

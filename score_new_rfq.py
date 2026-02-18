@@ -72,9 +72,6 @@ probabilities = model.predict_proba(X)[:, 1]
 df['conversion_probability'] = probabilities
 df['lead_score'] = (probabilities * 100).astype(int)
 
-print("\nScore distribution:")
-print(df['lead_score'].describe())
-
 # ============================================
 # 6. SAVE PREDICTIONS TO DATABASE
 # ============================================

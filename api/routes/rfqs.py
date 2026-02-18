@@ -208,9 +208,11 @@ def get_rfq_details(rfq_id):
                 r.created_at,
                 r.status,
                 b.business_name AS buyer_name,
-                b.business_id AS buyer_id
+                b.business_id AS buyer_id,
+                s.conversion_probability
             FROM rfqs r
             JOIN businesses b ON r.buyer_business_id = b.business_id
+            LEFT JOIN rfq_lead_scores s ON r.rfq_id = s.rfq_id
             WHERE r.rfq_id = %s
         """
         cursor.execute(query, (rfq_id,))

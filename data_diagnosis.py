@@ -3,7 +3,8 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier
 
 # Load your training data
-df = pd.read_csv('training_data.csv')
+#df = pd.read_csv('training_data.csv')
+df = pd.read_csv('training_data_pipeline_test.csv')
 
 df['converted'] = df['converted'].astype(str).str.strip().str.lower().map({'t': 1, 'true': 1, '1': 1, 'y': 1, 'yes': 1, 'f': 0, 'false': 0, '0': 0, 'n': 0, 'no': 0}).astype(int)
 
