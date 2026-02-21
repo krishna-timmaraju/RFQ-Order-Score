@@ -207,6 +207,8 @@ def get_rfq_details(rfq_id):
                 r.status,
                 b.business_name AS buyer_name,
                 b.business_id AS buyer_id,
+                b.brank AS buyer_brank,
+                b.primary_category AS buyer_category,
                 s.conversion_probability
             FROM rfqs r
             JOIN businesses b ON r.buyer_business_id = b.business_id

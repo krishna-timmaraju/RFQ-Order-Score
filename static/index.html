@@ -655,18 +655,20 @@
             const conv = (rfq.conversion_probability !== null && rfq.conversion_probability !== undefined)
               ? (parseFloat(rfq.conversion_probability) * 100).toFixed(1) + '%'
               : '—';
+            const brank = rfq.buyer_brank != null ? rfq.buyer_brank : '—';
+            const buyerCategory = rfq.buyer_category != null ? rfq.buyer_category : '—';
             body.innerHTML = `
               <h2 style="margin-top:0;">RFQ Details</h2>
-              <div style="margin-bottom:1rem;"><b>RFQ ID:</b> ${escapeHtml(rfq.rfq_id)}</div>
-              <div><b>Title:</b> ${escapeHtml(rfq.title)}</div>
-              <div><b>Description:</b> ${escapeHtml(rfq.description)}</div>
-              <div><b>Category:</b> ${escapeHtml(rfq.category)}</div>
-              <div><b>Buyer Name:</b> ${escapeHtml(rfq.buyer_name)}</div>
-              <div><b>Business ID:</b> ${escapeHtml(rfq.buyer_id)}</div>
-              <div><b>Budget Min:</b> ${escapeHtml(rfq.budget_min)}</div>
-              <div><b>Budget Max:</b> ${escapeHtml(rfq.budget_max)}</div>
-              <div><b>Status:</b> ${escapeHtml(rfq.status)}</div>
-              <div><b>Created At:</b> ${escapeHtml(rfq.created_at)}</div>
+              <div style="margin-bottom:1.5rem;"><b>RFQ ID:</b> ${escapeHtml(rfq.rfq_id)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Title:</b> ${escapeHtml(rfq.title)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Description:</b> ${escapeHtml(rfq.description)}</div>
+              <div style="margin-bottom:1.5rem;"><b>RFQ Category:</b> ${escapeHtml(rfq.category)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Buyer Name:</b> ${escapeHtml(rfq.buyer_name)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Business ID:</b> ${escapeHtml(rfq.buyer_id)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Business Rank (BRank):</b> ${escapeHtml(brank)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Business Category:</b> ${escapeHtml(buyerCategory)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Budget Min:</b> ${escapeHtml(rfq.budget_min)}</div>
+              <div style="margin-bottom:1.5rem;"><b>Budget Max:</b> ${escapeHtml(rfq.budget_max)}</div>
               <div><b style="background:#e3f0fb;padding:0.1rem 0.5rem;border-radius:6px;">Predicted Conversion:</b> <span style="font-weight:600;background:#e3f0fb;padding:0.1rem 0.5rem;border-radius:6px;">${conv}</span></div>
             `;
         })
