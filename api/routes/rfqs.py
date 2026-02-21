@@ -219,17 +219,34 @@ def get_rfq_details(rfq_id):
         row = cursor.fetchone()
         cursor.close()
         conn.close()
-        rfq = dict(row) if row else None
-        if not rfq:
+        
+        if not row:
             return jsonify({
                 'success': False,
                 'error': 'RFQ not found'
             }), 404
+        
+        rfq = dict(row)
+        
+        # Calculate category_match in Python
+        rfq_category = rfq.get('category', '')
+        buyer_category = rfq.get('buyer_category', '')
+        
+        if rfq_category == buyer_category:
+            category_match = 1.0
+        elif buyer_category and rfq_category and buyer_category[:5] in rfq_category:
+            category_match = 0.6
+        else:
+            category_match = 0.2
+        
+        rfq['category_match'] = category_match
+        
         return jsonify({
             'success': True,
             'rfq': rfq
         }), 200
     except Exception as e:
+        logger.error(f"Error in get_rfq_details: {str(e)}")
         return jsonify({
             'success': False,
             'error': f'Server error: {str(e)}'
