@@ -33,7 +33,7 @@ def health_check():
     """
     try:
         conn = get_db_connection()
-        if conn.closed == 0:
+        if conn is not None and conn.closed == 0:
             conn.close()
             return jsonify({
                 'status': 'healthy',
@@ -135,7 +135,7 @@ def get_scored_rfqs():
             JOIN rfq_lead_scores s ON r.rfq_id = s.rfq_id
             WHERE r.status = %s
         """
-        params = [status_filter]
+        params: list = [status_filter]
         # Add rfqscore filter if provided
         if rfqscore_filter:
             query += " AND b.brank = %s"
