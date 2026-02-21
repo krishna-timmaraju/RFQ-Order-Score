@@ -142,7 +142,7 @@ def get_scored_rfqs():
             params.append(rfqscore_filter)
         # Sort and limit
         query += """
-            ORDER BY s.lead_score DESC, r.created_at DESC
+            ORDER BY s.conversion_probability DESC, r.created_at DESC
         """
         if limit is not None:
             query += " LIMIT %s"
