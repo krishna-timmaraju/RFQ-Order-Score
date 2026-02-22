@@ -1,6 +1,6 @@
-# RFQ Lead Scoring Service
+# RFQ Scoring Engine
 
-A machine-learning-powered RFQ scoring service for RFQs (Request for Quotation) in a B2B marketplace. Given a published RFQ and the buyer's profile, the model predicts the probability that the RFQ will convert to an order and exposes those scores through a REST API and a lightweight web dashboard.
+A machine-learning-powered RFQ scoring Engine for RFQs (Request for Quotation) in a B2B marketplace. Given a published RFQ and the buyer's profile, the model predicts the probability that the RFQ will convert to an order and exposes those scores through a REST API and a lightweight web dashboard.
 
 ---
 
