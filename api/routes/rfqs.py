@@ -59,7 +59,7 @@ def get_scored_rfqs():
     GET /api/rfqs/scored
     
     Optional Query Parameters:
-    - limit: Number of results (default: 50, max: 100)
+    - limit: Number of results (default: 50, max: 200)
     - min_score: Minimum lead score filter (0-100)
     - rfqscore: Filter by buyer rfqscore (1-5)
     - status: Filter by RFQ status (published, closed, etc.)
@@ -82,7 +82,7 @@ def get_scored_rfqs():
         limit = None
     else:
         try:
-            limit = min(int(limit_param), 100)
+            limit = min(int(limit_param), 200)
         except Exception:
             limit = 50
     try:
@@ -573,22 +573,41 @@ def create_rfq():
         
         cursor = conn.cursor()
         
-        # Generate custom rfq_id in format RFQ001, RFQ002, ...
-        cursor.execute("SELECT rfq_id FROM rfqs ORDER BY created_at DESC LIMIT 1")
-        last_rfq = cursor.fetchone()
-        if last_rfq and last_rfq[0] and last_rfq[0].startswith('RFQ'):
-            last_num = int(last_rfq[0][3:])
-            new_num = last_num + 1
-        else:
-            new_num = 1
-        new_rfq_id = f"RFQ{new_num:03d}"
+        # Generate custom rfq_id in format RFQ001, RFQ002, ... with retry logic for duplicates
+        import time
+        max_retries = 5
+        new_rfq_id = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Generate ID based on max existing + 1 (atomic query)
+                cursor.execute("SELECT MAX(CAST(SUBSTRING(rfq_id, 4) AS INTEGER)) as max_num FROM rfqs WHERE rfq_id ~ '^RFQ[0-9]+$'")
+                result = cursor.fetchone()
+                max_num = result[0] if result and result[0] else 0
+                new_num = max_num + 1
+                new_rfq_id = f"RFQ{new_num:03d}"
 
-        insert_query = """
-            INSERT INTO rfqs (rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-        """
-        cursor.execute(insert_query, (new_rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status))
-        conn.commit()
+                insert_query = """
+                    INSERT INTO rfqs (rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                """
+                cursor.execute(insert_query, (new_rfq_id, title, description, category, budget_min, budget_max, buyer_business_id, status))
+                conn.commit()
+                break  # Success, exit retry loop
+            except Error as e:
+                if 'duplicate key' in str(e).lower() and attempt < max_retries - 1:
+                    # Duplicate key detected, retry with slight delay
+                    conn.rollback()
+                    time.sleep(0.1 * (attempt + 1))  # Exponential backoff
+                    cursor.close()
+                    cursor = conn.cursor()
+                    continue
+                else:
+                    # Not a duplicate key error or max retries exceeded
+                    cursor.close()
+                    conn.close()
+                    raise
+        
         cursor.close()
         conn.close()
         logger.info(f"New RFQ created successfully - RFQ ID: {new_rfq_id}, Title: {title}")

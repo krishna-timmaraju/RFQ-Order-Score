@@ -294,8 +294,13 @@
           <option value="20">20</option>
           <option value="50">50</option>
           <option value="100">100</option>
+          <option value="200">200</option>
           <option value="all">All</option>
         </select>
+        <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.875rem;">
+          <input type="checkbox" id="hide-low-score" style="width: auto; margin: 0;">
+          Hide scores below 30%
+        </label>
         <button type="button" id="refresh">Refresh</button>
       </div>
     </header>
@@ -390,6 +395,9 @@
 
   <script>
     const API_BASE = ''; // same origin
+    
+    // Store raw RFQ data for filtering
+    let allRFQs = [];
 
     // ===== Tab Navigation =====
     document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -425,17 +433,28 @@
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error').style.display = 'none';
       document.getElementById('tableWrap').style.display = 'block';
-      document.getElementById('countBar').textContent = `Showing ${count} RFQ${count !== 1 ? 's' : ''}`;
+      
+      // Store the original RFQs data
+      allRFQs = rfqs || [];
+      
+      // Apply score filter if enabled
+      const hideLoScore = document.getElementById('hide-low-score').checked;
+      let displayRFQs = allRFQs;
+      if (hideLoScore) {
+        displayRFQs = allRFQs.filter(r => (r.conversion_probability || 0) >= 0.3);
+      }
+      
+      document.getElementById('countBar').textContent = `Showing ${displayRFQs.length} of ${count} RFQ${count !== 1 ? 's' : ''}`;
 
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
 
-      if (!rfqs || rfqs.length === 0) {
+      if (!displayRFQs || displayRFQs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="muted">No scored RFQs match the filters.</td></tr>';
         return;
       }
 
-      rfqs.forEach(r => {
+      displayRFQs.forEach(r => {
         const tr = document.createElement('tr');
         const priority = (r.priority || '').toLowerCase();
         const scoreColor = r.score_color || (priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low');
@@ -510,6 +529,10 @@
       loadRFQs();
     });
     document.getElementById('limit').addEventListener('change', loadRFQs);
+    document.getElementById('hide-low-score').addEventListener('change', () => {
+      // Re-apply filter when checkbox is toggled
+      showTable(allRFQs, allRFQs.length);
+    });
 
     // ===== Create RFQ Form Functions =====
     function showFormSuccess(message) {
